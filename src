@@ -1,0 +1,299 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Structure
+struct Transaction {
+    int id;
+    char stockName[50];
+    int quantity;
+    float price;
+    struct Transaction *prev;
+    struct Transaction *next;
+};
+
+struct Transaction *head = NULL;
+
+// Create Node
+struct Transaction* createNode() {
+    struct Transaction *newNode = (struct Transaction*)malloc(sizeof(struct Transaction));
+
+    if (!newNode) {
+        printf("Memory allocation failed!\n");
+        return NULL;
+    }
+
+    printf("Enter Transaction ID: ");
+    scanf("%d", &newNode->id);
+
+    printf("Enter Stock Name: ");
+    scanf("%s", newNode->stockName);
+
+    printf("Enter Quantity: ");
+    scanf("%d", &newNode->quantity);
+
+    printf("Enter Price: ");
+    scanf("%f", &newNode->price);
+
+    newNode->prev = newNode->next = NULL;
+    return newNode;
+}
+
+// Insert at End
+void addTransaction() {
+    struct Transaction *newNode = createNode();
+    if (!newNode) return;
+
+    if (head == NULL) {
+        head = newNode;
+    } else {
+        struct Transaction *temp = head;
+        while (temp->next != NULL)
+            temp = temp->next;
+
+        temp->next = newNode;
+        newNode->prev = temp;
+    }
+
+    printf("Transaction added!\n");
+}
+
+// Display Forward
+void displayForward() {
+    struct Transaction *temp = head;
+
+    if (!temp) {
+        printf("No data available.\n");
+        return;
+    }
+
+    printf("\n--- Transactions (Forward) ---\n");
+    while (temp) {
+        printf("ID:%d | %s | Qty:%d | Price:%.2f\n",
+               temp->id, temp->stockName, temp->quantity, temp->price);
+        temp = temp->next;
+    }
+}
+
+// Display Reverse
+void displayReverse() {
+    struct Transaction *temp = head;
+
+    if (!temp) {
+        printf("No data available.\n");
+        return;
+    }
+
+    while (temp->next)
+        temp = temp->next;
+
+    printf("\n--- Transactions (Reverse) ---\n");
+    while (temp) {
+        printf("ID:%d | %s | Qty:%d | Price:%.2f\n",
+               temp->id, temp->stockName, temp->quantity, temp->price);
+        temp = temp->prev;
+    }
+}
+
+// Search
+struct Transaction* search(int id) {
+    struct Transaction *temp = head;
+    while (temp) {
+        if (temp->id == id)
+            return temp;
+        temp = temp->next;
+    }
+    return NULL;
+}
+
+// Update
+void updateTransaction() {
+    int id;
+    printf("Enter ID to update: ");
+    scanf("%d", &id);
+
+    struct Transaction *t = search(id);
+
+    if (!t) {
+        printf("Not found!\n");
+        return;
+    }
+
+    printf("Enter new Stock Name: ");
+    scanf("%s", t->stockName);
+
+    printf("Enter new Quantity: ");
+    scanf("%d", &t->quantity);
+
+    printf("Enter new Price: ");
+    scanf("%f", &t->price);
+
+    printf("Updated successfully!\n");
+}
+
+// Delete
+void deleteTransaction() {
+    int id;
+    printf("Enter ID to delete: ");
+    scanf("%d", &id);
+
+    struct Transaction *t = search(id);
+
+    if (!t) {
+        printf("Not found!\n");
+        return;
+    }
+
+    if (t->prev)
+        t->prev->next = t->next;
+    else
+        head = t->next;
+
+    if (t->next)
+        t->next->prev = t->prev;
+
+    free(t);
+    printf("Deleted successfully!\n");
+}
+
+// Sort by Price
+void sortByPrice() {
+    struct Transaction *i, *j;
+    struct Transaction temp;
+
+    for (i = head; i != NULL; i = i->next) {
+        for (j = i->next; j != NULL; j = j->next) {
+            if (i->price > j->price) {
+                temp = *i;
+                *i = *j;
+                *j = temp;
+
+                // Fix pointers after swap
+                struct Transaction *tmpPrev = i->prev;
+                struct Transaction *tmpNext = i->next;
+
+                i->prev = j->prev;
+                i->next = j->next;
+
+                j->prev = tmpPrev;
+                j->next = tmpNext;
+            }
+        }
+    }
+
+    printf("Sorted by price!\n");
+}
+
+// Save to File
+void saveToFile() {
+    FILE *fp = fopen("transactions.txt", "w");
+    struct Transaction *temp = head;
+
+    if (!fp) {
+        printf("File error!\n");
+        return;
+    }
+
+    while (temp) {
+        fprintf(fp, "%d %s %d %f\n",
+                temp->id, temp->stockName, temp->quantity, temp->price);
+        temp = temp->next;
+    }
+
+    fclose(fp);
+    printf("Data saved to file.\n");
+}
+
+// Load from File
+void loadFromFile() {
+    FILE *fp = fopen("transactions.txt", "r");
+
+    if (!fp) {
+        printf("No saved file found.\n");
+        return;
+    }
+
+    struct Transaction *newNode;
+
+    while (1) {
+        newNode = (struct Transaction*)malloc(sizeof(struct Transaction));
+        if (fscanf(fp, "%d %s %d %f",
+                   &newNode->id,
+                   newNode->stockName,
+                   &newNode->quantity,
+                   &newNode->price) != 4) {
+            free(newNode);
+            break;
+        }
+
+        newNode->next = head;
+        newNode->prev = NULL;
+        if (head)
+            head->prev = newNode;
+
+        head = newNode;
+    }
+
+    fclose(fp);
+    printf("Data loaded from file.\n");
+}
+
+// Free memory
+void freeAll() {
+    struct Transaction *temp;
+    while (head) {
+        temp = head;
+        head = head->next;
+        free(temp);
+    }
+}
+
+// Menu
+int main() {
+    int choice;
+
+    do {
+        printf("\n===== STOCK EXCHANGE SYSTEM =====\n");
+        printf("1. Add Transaction\n");
+        printf("2. Delete Transaction\n");
+        printf("3. Update Transaction\n");
+        printf("4. Search Transaction\n");
+        printf("5. Display Forward\n");
+        printf("6. Display Reverse\n");
+        printf("7. Sort by Price\n");
+        printf("8. Save to File\n");
+        printf("9. Load from File\n");
+        printf("10. Exit\n");
+
+        printf("Enter choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1: addTransaction(); break;
+            case 2: deleteTransaction(); break;
+            case 3: updateTransaction(); break;
+            case 4: {
+                int id;
+                printf("Enter ID: ");
+                scanf("%d", &id);
+                struct Transaction *t = search(id);
+                if (t)
+                    printf("Found: %s | Qty:%d | Price:%.2f\n",
+                           t->stockName, t->quantity, t->price);
+                else
+                    printf("Not found!\n");
+                break;
+            }
+            case 5: displayForward(); break;
+            case 6: displayReverse(); break;
+            case 7: sortByPrice(); break;
+            case 8: saveToFile(); break;
+            case 9: loadFromFile(); break;
+            case 10: freeAll(); printf("Exiting...\n"); break;
+            default: printf("Invalid choice!\n");
+        }
+
+    } while (choice != 10);
+
+    return 0;
+}
