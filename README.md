@@ -4,7 +4,7 @@ Stock Exchange Transaction Management System Using Doubly Linked List in C
 
 👥 Team Members
 
-Student 1:P.Kartheek
+Student 1:P.Karthik
 
 Student 2:N.Yaswanth
 
